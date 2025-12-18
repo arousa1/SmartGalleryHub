@@ -35,17 +35,15 @@ public class AuthInterceptor {
         String mustRole = authCheck.mustRole();
         RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
         HttpServletRequest request = ((ServletRequestAttributes) requestAttributes).getRequest();
-        // 当前登录用户
+        // 获取当前登录用户
         User loginUser = userService.getLoginUser(request);
         UserRoleEnum mustRoleEnum = UserRoleEnum.getEnumByValue(mustRole);
-        // 不需要权限，放行
+        // 如果不需要权限，放行
         if (mustRoleEnum == null) {
             return joinPoint.proceed();
         }
-        // 以下为：必须有该权限才通过
-        // 获取当前用户具有的权限
+        // 以下的代码：必须有权限，才会通过
         UserRoleEnum userRoleEnum = UserRoleEnum.getEnumByValue(loginUser.getUserRole());
-        // 没有权限，拒绝
         if (userRoleEnum == null) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
@@ -57,4 +55,3 @@ public class AuthInterceptor {
         return joinPoint.proceed();
     }
 }
-

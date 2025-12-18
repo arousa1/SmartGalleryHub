@@ -4,6 +4,9 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 图片审核请求
+ */
 @Data
 public class PictureReviewRequest implements Serializable {
 

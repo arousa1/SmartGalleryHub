@@ -1,22 +1,18 @@
 package com.yupi.yupicturebackend.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 
+import java.io.Serializable;
 import java.util.Date;
-
 import lombok.Data;
 
 /**
  * 用户
- *
  * @TableName user
  */
-@TableName(value = "user")
+@TableName(value ="user")
 @Data
-public class User {
+public class User implements Serializable {
     /**
      * id
      */
@@ -54,6 +50,21 @@ public class User {
     private String userRole;
 
     /**
+     * 会员过期时间
+     */
+    private Date vipExpireTime;
+
+    /**
+     * 会员兑换码
+     */
+    private String vipCode;
+
+    /**
+     * 会员编号
+     */
+    private Long vipNumber;
+
+    /**
      * 编辑时间
      */
     private Date editTime;
@@ -73,4 +84,7 @@ public class User {
      */
     @TableLogic
     private Integer isDelete;
+
+    @TableField(exist = false)
+    private static final long serialVersionUID = 1L;
 }

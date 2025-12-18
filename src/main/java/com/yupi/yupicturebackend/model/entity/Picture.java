@@ -1,22 +1,18 @@
 package com.yupi.yupicturebackend.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 
+import java.io.Serializable;
 import java.util.Date;
-
 import lombok.Data;
 
 /**
  * 图片
- *
  * @TableName picture
  */
-@TableName(value = "picture")
+@TableName(value ="picture")
 @Data
-public class Picture {
+public class Picture implements Serializable {
     /**
      * id
      */
@@ -27,6 +23,11 @@ public class Picture {
      * 图片 url
      */
     private String url;
+
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
 
     /**
      * 图片名称
@@ -74,9 +75,19 @@ public class Picture {
     private String picFormat;
 
     /**
+     * 图片主色调
+     */
+    private String picColor;
+
+    /**
      * 创建用户 id
      */
     private Long userId;
+
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
 
     /**
      * 审核状态：0-待审核; 1-通过; 2-拒绝
@@ -118,4 +129,7 @@ public class Picture {
      */
     @TableLogic
     private Integer isDelete;
+
+    @TableField(exist = false)
+    private static final long serialVersionUID = 1L;
 }

@@ -1,5 +1,8 @@
 package com.yupi.yupicturebackend.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.http.HttpUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.yupicturebackend.annotation.AuthCheck;
 import com.yupi.yupicturebackend.common.BaseResponse;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.file.Files;
 import java.util.List;
 
 @RestController
@@ -34,12 +38,15 @@ public class UserController {
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
-        long result = userService.userRegister(userRegisterRequest);
+        String userAccount = userRegisterRequest.getUserAccount();
+        String userPassword = userRegisterRequest.getUserPassword();
+        String checkPassword = userRegisterRequest.getCheckPassword();
+        long result = userService.userRegister(userAccount, userPassword, checkPassword);
         return ResultUtils.success(result);
     }
 
     /**
-     * 用户注册
+     * 用户登录
      */
     @PostMapping("/login")
     public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
@@ -61,9 +68,6 @@ public class UserController {
 
     /**
      * 用户注销
-     *
-     * @param request
-     * @return
      */
     @PostMapping("/logout")
     public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
@@ -80,11 +84,12 @@ public class UserController {
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
         ThrowUtils.throwIf(userAddRequest == null, ErrorCode.PARAMS_ERROR);
         User user = new User();
-        BeanUtils.copyProperties(userAddRequest, user);
-        // 默认密码 12345678
+        BeanUtil.copyProperties(userAddRequest, user);
+        // 默认密码
         final String DEFAULT_PASSWORD = "12345678";
         String encryptPassword = userService.getEncryptPassword(DEFAULT_PASSWORD);
         user.setUserPassword(encryptPassword);
+        // 插入数据库
         boolean result = userService.save(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(user.getId());
@@ -160,5 +165,18 @@ public class UserController {
         return ResultUtils.success(userVOPage);
     }
 
+    /**
+     * 兑换会员
+     */
+    @PostMapping("/exchange/vip")
+    public BaseResponse<Boolean> exchangeVip(@RequestBody VipExchangeRequest vipExchangeRequest,
+                                             HttpServletRequest httpServletRequest) {
+        ThrowUtils.throwIf(vipExchangeRequest == null, ErrorCode.PARAMS_ERROR);
+        String vipCode = vipExchangeRequest.getVipCode();
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        // 调用 service 层的方法进行会员兑换
+        boolean result = userService.exchangeVip(loginUser, vipCode);
+        return ResultUtils.success(result);
+    }
 
 }

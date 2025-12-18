@@ -10,9 +10,10 @@ import lombok.Getter;
 public enum UserRoleEnum {
 
     USER("用户", "user"),
+    VIP("会员", "vip"),
     ADMIN("管理员", "admin");
 
-    private final String text; // 枚举类的中文描述
+    private final String text;
 
     private final String value;
 
@@ -24,16 +25,15 @@ public enum UserRoleEnum {
     /**
      * 根据 value 获取枚举
      *
-     * @param value 枚举值的value
+     * @param value 枚举值的 value
      * @return 枚举值
      */
     public static UserRoleEnum getEnumByValue(String value) {
         if (ObjUtil.isEmpty(value)) {
             return null;
         }
-
         for (UserRoleEnum userRoleEnum : UserRoleEnum.values()) {
-            if (userRoleEnum.getValue().equals(value)) {
+            if (userRoleEnum.value.equals(value)) {
                 return userRoleEnum;
             }
         }

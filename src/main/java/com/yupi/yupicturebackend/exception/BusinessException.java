@@ -7,6 +7,7 @@ import lombok.Getter;
  */
 @Getter
 public class BusinessException extends RuntimeException {
+
     /**
      * 错误码
      */
@@ -26,4 +27,5 @@ public class BusinessException extends RuntimeException {
         super(message);
         this.code = errorCode.getCode();
     }
+
 }

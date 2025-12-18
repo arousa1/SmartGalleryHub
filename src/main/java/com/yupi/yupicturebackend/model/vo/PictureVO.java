@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -21,6 +22,11 @@ public class PictureVO implements Serializable {
      * 图片 url
      */
     private String url;
+
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
 
     /**
      * 图片名称
@@ -68,9 +74,19 @@ public class PictureVO implements Serializable {
     private String picFormat;
 
     /**
+     * 图片主色调
+     */
+    private String picColor;
+
+    /**
      * 用户 id
      */
     private Long userId;
+
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
 
     /**
      * 创建时间
@@ -92,6 +108,11 @@ public class PictureVO implements Serializable {
      */
     private UserVO user;
 
+    /**
+     * 权限列表
+     */
+    private List<String> permissionList = new ArrayList<>();
+
     private static final long serialVersionUID = 1L;
 
     /**
@@ -103,7 +124,7 @@ public class PictureVO implements Serializable {
         }
         Picture picture = new Picture();
         BeanUtils.copyProperties(pictureVO, picture);
-        // 类型不同，需要转换  
+        // 类型不同，需要转换
         picture.setTags(JSONUtil.toJsonStr(pictureVO.getTags()));
         return picture;
     }
@@ -117,7 +138,7 @@ public class PictureVO implements Serializable {
         }
         PictureVO pictureVO = new PictureVO();
         BeanUtils.copyProperties(picture, pictureVO);
-        // 类型不同，需要转换  
+        // 类型不同，需要转换
         pictureVO.setTags(JSONUtil.toList(picture.getTags(), String.class));
         return pictureVO;
     }

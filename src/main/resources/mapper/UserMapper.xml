@@ -5,22 +5,27 @@
 <mapper namespace="com.yupi.yupicturebackend.mapper.UserMapper">
 
     <resultMap id="BaseResultMap" type="com.yupi.yupicturebackend.model.entity.User">
-        <id property="id" column="id"/>
-        <result property="userAccount" column="userAccount"/>
-        <result property="userPassword" column="userPassword"/>
-        <result property="userName" column="userName"/>
-        <result property="userAvatar" column="userAvatar"/>
-        <result property="userProfile" column="userProfile"/>
-        <result property="userRole" column="userRole"/>
-        <result property="editTime" column="editTime"/>
-        <result property="createTime" column="createTime"/>
-        <result property="updateTime" column="updateTime"/>
-        <result property="isDelete" column="isDelete"/>
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userAccount" column="userAccount" jdbcType="VARCHAR"/>
+            <result property="userPassword" column="userPassword" jdbcType="VARCHAR"/>
+            <result property="userName" column="userName" jdbcType="VARCHAR"/>
+            <result property="userAvatar" column="userAvatar" jdbcType="VARCHAR"/>
+            <result property="userProfile" column="userProfile" jdbcType="VARCHAR"/>
+            <result property="userRole" column="userRole" jdbcType="VARCHAR"/>
+            <result property="editTime" column="editTime" jdbcType="TIMESTAMP"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+            <result property="vipExpireTime" column="vipExpireTime" jdbcType="TIMESTAMP"/>
+            <result property="vipCode" column="vipCode" jdbcType="VARCHAR"/>
+            <result property="vipNumber" column="vipNumber" jdbcType="BIGINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id
-        ,userAccount,userPassword,userName,userAvatar,userProfile,
-        userRole,editTime,createTime,updateTime,isDelete
+        id,userAccount,userPassword,
+        userName,userAvatar,userProfile,
+        userRole,editTime,createTime,
+        updateTime,isDelete,vipExpireTime,
+        vipCode,vipNumber
     </sql>
 </mapper>
