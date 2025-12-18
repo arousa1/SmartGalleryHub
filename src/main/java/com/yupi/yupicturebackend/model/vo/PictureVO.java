@@ -41,7 +41,7 @@ public class PictureVO implements Serializable {
     /**
      * 标签
      */
-    private List<String> tags;
+    private String tags;
 
     /**
      * 分类
@@ -138,8 +138,7 @@ public class PictureVO implements Serializable {
         }
         PictureVO pictureVO = new PictureVO();
         BeanUtils.copyProperties(picture, pictureVO);
-        // 类型不同，需要转换
-        pictureVO.setTags(JSONUtil.toList(picture.getTags(), String.class));
+        pictureVO.setTags(picture.getTags());
         return pictureVO;
     }
 }

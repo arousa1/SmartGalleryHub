@@ -186,6 +186,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
+        picture.setIntroduction(uploadPictureResult.getIntroduction());
+        picture.setTags(uploadPictureResult.getTags());
+        picture.setCategory(uploadPictureResult.getCategory());
 //        picture.setPicColor(uploadPictureResult.getPicColor());
         // 转换为标准颜色
         picture.setPicColor(ColorTransformUtils.getStandardColor(uploadPictureResult.getPicColor()));

@@ -126,8 +126,9 @@
         <!-- 腾讯云官方 SDK（最新版已包含混元签名实现） -->
         <dependency>
             <groupId>com.tencentcloudapi</groupId>
-            <artifactId>tencentcloud-sdk-java</artifactId>
-            <version>3.1.1058</version> <!-- 2025-12 最新 -->
+            <artifactId>tencentcloud-sdk-java-hunyuan</artifactId>
+            <!-- 确保使用较新版本 -->
+            <version>3.1.1169</version>
         </dependency>
     </dependencies>
     <dependencyManagement>

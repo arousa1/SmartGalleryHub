@@ -5,6 +5,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.qcloud.cos.http.HttpMethodName;
+import com.qcloud.cos.model.GeneratePresignedUrlRequest;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
@@ -13,11 +15,15 @@ import com.yupi.yupicturebackend.config.CosClientConfig;
 import com.yupi.yupicturebackend.exception.BusinessException;
 import com.yupi.yupicturebackend.exception.ErrorCode;
 import com.yupi.yupicturebackend.manager.CosManager;
+import com.yupi.yupicturebackend.manager.HunYuanManager;
 import com.yupi.yupicturebackend.model.dto.file.UploadPictureResult;
+import com.yupi.yupicturebackend.model.vo.AIPictureInfoVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -32,6 +38,9 @@ public abstract class PictureUploadTemplate {
 
     @Resource
     private CosManager cosManager;
+
+    @Resource
+    private HunYuanManager hunYuanManager;
 
     /**
      * 上传图片
@@ -58,6 +67,16 @@ public abstract class PictureUploadTemplate {
             processFile(inputSource, file);
             // 4. 上传图片到对象存储
             PutObjectResult putObjectResult = cosManager.putPictureObject(uploadPath, file);
+            /* ===== 新增：生成预签名 HTTPS 地址（有效期 1 h）===== */
+            GeneratePresignedUrlRequest urlRequest =
+                    new GeneratePresignedUrlRequest(
+                            cosClientConfig.getBucket(),   // 你封装好的桶名
+                            uploadPath,                   // 对象 key
+                            HttpMethodName.GET);
+            urlRequest.setExpiration(Date.from(Instant.now().plusSeconds(3600L)));
+            String cosUrl = cosClientConfig.cosClient().generatePresignedUrl(urlRequest).toString();
+            // AI对图片进行分析
+            AIPictureInfoVO extraPicInfo = hunYuanManager.analyzeImage(cosUrl);
             // 5. 获取图片信息对象，封装返回结果
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
             // 获取到图片处理结果
@@ -73,9 +92,9 @@ public abstract class PictureUploadTemplate {
                     thumbnailCiObject = objectList.get(1);
                 }
                 // 封装压缩图的返回结果
-                return buildResult(originalFilename, compressedCiObject, thumbnailCiObject, imageInfo);
+                return buildResult(originalFilename, compressedCiObject, thumbnailCiObject, imageInfo, extraPicInfo);
             }
-            return buildResult(originalFilename, file, uploadPath, imageInfo);
+            return buildResult(originalFilename, file, uploadPath, imageInfo, extraPicInfo);
         } catch (Exception e) {
             log.error("图片上传到对象存储失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
@@ -85,6 +104,8 @@ public abstract class PictureUploadTemplate {
         }
 
     }
+
+
 
     /**
      * 校验输入源（本地文件或 URL）
@@ -111,7 +132,7 @@ public abstract class PictureUploadTemplate {
      * @return
      */
     private UploadPictureResult buildResult(String originalFilename, CIObject compressedCiObject, CIObject thumbnailCiObject,
-                                            ImageInfo imageInfo) {
+                                            ImageInfo imageInfo, AIPictureInfoVO extraPicInfo) {
         // 计算宽高
         int picWidth = compressedCiObject.getWidth();
         int picHeight = compressedCiObject.getHeight();
@@ -127,6 +148,9 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicScale(picScale);
         uploadPictureResult.setPicFormat(compressedCiObject.getFormat());
         uploadPictureResult.setPicColor(imageInfo.getAve());
+        uploadPictureResult.setIntroduction(extraPicInfo.getIntroduction());
+        uploadPictureResult.setTags(extraPicInfo.getTags());
+        uploadPictureResult.setCategory(extraPicInfo.getCategory());
         // 设置缩略图地址
         uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnailCiObject.getKey());
         // 返回可访问的地址
@@ -142,7 +166,11 @@ public abstract class PictureUploadTemplate {
      * @param imageInfo        对象存储返回的图片信息
      * @return
      */
-    private UploadPictureResult buildResult(String originalFilename, File file, String uploadPath, ImageInfo imageInfo) {
+    private UploadPictureResult buildResult(String originalFilename,
+                                            File file,
+                                            String uploadPath,
+                                            ImageInfo imageInfo,
+                                            AIPictureInfoVO extraPicInfo) {
         // 计算宽高
         int picWidth = imageInfo.getWidth();
         int picHeight = imageInfo.getHeight();
@@ -157,6 +185,9 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicScale(picScale);
         uploadPictureResult.setPicFormat(imageInfo.getFormat());
         uploadPictureResult.setPicColor(imageInfo.getAve());
+        uploadPictureResult.setIntroduction(extraPicInfo.getIntroduction());
+        uploadPictureResult.setTags(extraPicInfo.getTags());
+        uploadPictureResult.setCategory(extraPicInfo.getCategory());
         // 返回可访问的地址
         return uploadPictureResult;
     }

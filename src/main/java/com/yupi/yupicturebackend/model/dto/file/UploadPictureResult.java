@@ -2,6 +2,8 @@ package com.yupi.yupicturebackend.model.dto.file;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 上传图片的结果
  */
@@ -52,4 +54,20 @@ public class UploadPictureResult {
      * 图片主色调
      */
     private String picColor;
+
+    // AI补充简介，标签和分类
+    /**
+     * 简介
+     */
+    private String introduction;
+
+    /**
+     * 分类
+     */
+    private String category;
+
+    /**
+     * 标签（JSON 数组）
+     */
+    private String tags;
 }

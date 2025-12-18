@@ -96,3 +96,10 @@ knife4j:
 #aliYunAi:
 #  apiKey: xxx
 
+# 混元大模型配置（需要从腾讯云获取）
+#hunyuan:
+#  secret-id: AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#  secret-key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#  region: ap-guangzhou           # 混元目前只在华南开放
+#  endpoint: hunyuan.tencentcloudapi.com
+#  model: hunyuan-vision          # 图像理解专用模型
