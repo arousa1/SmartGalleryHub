@@ -14,6 +14,7 @@ import com.yupi.yupicturebackend.api.aliyunai.model.CreateOutPaintingTaskRespons
 import com.yupi.yupicturebackend.exception.BusinessException;
 import com.yupi.yupicturebackend.exception.ErrorCode;
 import com.yupi.yupicturebackend.exception.ThrowUtils;
+import com.yupi.yupicturebackend.manager.CacheManager;
 import com.yupi.yupicturebackend.manager.CosManager;
 import com.yupi.yupicturebackend.manager.FileManager;
 import com.yupi.yupicturebackend.manager.upload.FilePictureUpload;
@@ -31,6 +32,7 @@ import com.yupi.yupicturebackend.model.vo.UserVO;
 import com.yupi.yupicturebackend.service.PictureService;
 import com.yupi.yupicturebackend.service.SpaceService;
 import com.yupi.yupicturebackend.service.UserService;
+import com.yupi.yupicturebackend.utils.CacheKeyUtils;
 import com.yupi.yupicturebackend.utils.ColorSimilarUtils;
 import com.yupi.yupicturebackend.utils.ColorTransformUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -62,9 +64,6 @@ import java.util.stream.Collectors;
 @Service
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         implements PictureService {
-
-    @Resource
-    private FileManager fileManager;
 
     @Resource
     private UserService userService;

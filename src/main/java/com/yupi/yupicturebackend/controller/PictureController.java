@@ -1,11 +1,8 @@
 package com.yupi.yupicturebackend.controller;
 
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.yupi.yupicturebackend.annotation.AuthCheck;
 import com.yupi.yupicturebackend.api.aliyunai.AliYunAiApi;
 import com.yupi.yupicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
@@ -37,20 +34,14 @@ import com.yupi.yupicturebackend.service.UserService;
 import com.yupi.yupicturebackend.utils.CacheKeyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.time.Duration;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author arousal
@@ -80,16 +71,6 @@ public class PictureController {
 
     @Resource
     private CacheManager cacheManager;
-
-    /**
-     * 手动加载本地缓存
-     */
-    private final Cache<String, String> LOCAL_CACHE = Caffeine.newBuilder()
-            .initialCapacity(1024)
-            .maximumSize(10_000L) // 最大 10000 条
-            // 缓存 5 分钟后移除
-            .expireAfterWrite(Duration.ofMinutes(5))
-            .build();
 
     /**
      * 上传图片（可重新上传）
@@ -129,6 +110,12 @@ public class PictureController {
         }
         User loginUser = userService.getLoginUser(request);
         pictureService.deletePicture(deleteRequest.getId(), loginUser);
+        // 查询是否在缓存中
+        PictureVO pictureVoById = cacheManager.getPictureVoById(deleteRequest.getId());
+        if(pictureVoById != null) {
+            // 若在缓存中则更新缓存
+            cacheManager.deleteCacheByKey(CacheKeyUtils.getPictureVoByIdKey(deleteRequest.getId()));
+        }
         return ResultUtils.success(true);
     }
 

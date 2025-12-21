@@ -1,12 +1,7 @@
 package com.yupi.yupicturebackend.manager.cache;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.RandomUtil;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -15,33 +10,23 @@ import java.util.stream.Collectors;
 /**
  * Redis分布式缓存操作类
  */
-@Component
-public class RedisCache extends CacheChainTemplate {
-
-    private static final long BASE_EXPIRE = 300L;
-
-    private static final TimeUnit SECONDS = TimeUnit.SECONDS;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+@Component("redisCache")
+public class RedisCache extends EnhancedCacheChainTemplate {
 
     @Override
-    public void setNext(CacheChainTemplate next) {
-        super.setNext(null);
+    public String getStringValue(String key) {
+        return stringRedisTemplate.opsForValue().get(key);
     }
 
     @Override
-    public void setStringValue(String key, String value) {
-        stringRedisTemplate.opsForValue().set(key, value, getExpire(), SECONDS);
+    public void setStringValue(String key, String value, long expireSeconds) {
+        stringRedisTemplate.opsForValue().set(key, value, expireSeconds, TimeUnit.SECONDS);
     }
 
     @Override
     public Set<String> getKeys() {
-        Set<String> keys = stringRedisTemplate.keys("*");
-        if (CollUtil.isEmpty(keys)) {
-            return new HashSet<>();
-        }
-        return keys.stream().filter(key -> !key.startsWith("spring:session"))
+        return stringRedisTemplate.keys("*").stream()
+                .filter(k -> !k.startsWith("spring:session"))
                 .collect(Collectors.toSet());
     }
 
@@ -56,11 +41,13 @@ public class RedisCache extends CacheChainTemplate {
     }
 
     @Override
-    public String getStringValue(String key) {
-        return stringRedisTemplate.opsForValue().get(key);
+    protected String cacheType() {
+        return "redis";
     }
 
-    private long getExpire() {
-        return BASE_EXPIRE + RandomUtil.randomLong(0, 300);
+    /* 结束链 */
+    @Override
+    public void setNext(EnhancedCacheChainTemplate next) {
+        super.setNext(null);
     }
 }

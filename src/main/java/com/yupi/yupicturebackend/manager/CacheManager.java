@@ -3,9 +3,11 @@ package com.yupi.yupicturebackend.manager;
 import cn.hutool.core.lang.TypeReference;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.yupicturebackend.manager.cache.CacheChainTemplate;
+import com.yupi.yupicturebackend.manager.cache.EnhancedCacheChainTemplate;
 import com.yupi.yupicturebackend.model.dto.picture.PictureQueryRequest;
 import com.yupi.yupicturebackend.model.vo.PictureVO;
 import com.yupi.yupicturebackend.utils.CacheKeyUtils;
+import lombok.Data;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -16,6 +18,7 @@ import java.util.Set;
  * 多级缓存管理类
  */
 @Component
+@Data
 public class CacheManager {
 
     private static final TypeReference<? extends PictureVO> TYPE_PICTURE_VO = new TypeReference<PictureVO>() {};
@@ -23,7 +26,7 @@ public class CacheManager {
     private static final TypeReference<? extends Page<PictureVO>> TYPE_PICTURE_VO_PAGE = new TypeReference<Page<PictureVO>>() {};
 
     @Resource(name = "localCache")
-    private CacheChainTemplate cacheChainTemplate;
+    private EnhancedCacheChainTemplate cacheChainTemplate;
 
     public PictureVO getPictureVoById(Long id) {
         return cacheChainTemplate.getObjectValueForString(

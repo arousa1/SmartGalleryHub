@@ -127,8 +127,14 @@
         <dependency>
             <groupId>com.tencentcloudapi</groupId>
             <artifactId>tencentcloud-sdk-java-hunyuan</artifactId>
-            <!-- 确保使用较新版本 -->
             <version>3.1.1169</version>
+        </dependency>
+        <!-- 专为异步断言设计的工具 -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>

@@ -1,6 +1,5 @@
 package com.yupi.yupicturebackend.manager.cache;
 
-import cn.hutool.core.collection.CollUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,47 +15,47 @@ import java.util.concurrent.TimeUnit;
  * Caffeine本地缓存操作类
  */
 @Component
-public class LocalCache extends CacheChainTemplate {
-    /**
-     * 手动启动本地缓存
-     */
-    private final Cache<String, Object> LOCAL_CACHE =
-            Caffeine.newBuilder().initialCapacity(1024)
-                    .maximumSize(10_000L)
-                    // 缓存 5 分钟移除
-                    .expireAfterWrite(5L, TimeUnit.MINUTES)
-                    .build();
+public class LocalCache extends EnhancedCacheChainTemplate {
 
-    @Override
-    @Autowired
-    @Qualifier("redisCache")
-    public void setNext(CacheChainTemplate next) {
-        super.setNext(next);
-    }
+    private final Cache<String, Object> cache = Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build();
 
     @Override
     public String getStringValue(String key) {
-        return (String) LOCAL_CACHE.getIfPresent(key);
+        return (String) cache.getIfPresent(key);
     }
 
     @Override
-    public void setStringValue(String key, String value) {
-        LOCAL_CACHE.put(key, value);
+    public void setStringValue(String key, String value, long expireSeconds) {
+        cache.put(key, value);
     }
 
     @Override
     public Set<String> getKeys() {
-        Set<String> strings = LOCAL_CACHE.asMap().keySet();
-        return CollUtil.isEmpty(strings) ? new HashSet<>() : new HashSet<>(strings);
+        return new HashSet<>(cache.asMap().keySet());
     }
 
     @Override
     public void deleteValue(String key) {
-        LOCAL_CACHE.invalidate(key);
+        cache.invalidate(key);
     }
 
     @Override
     public void deleteValues(List<String> keys) {
-        LOCAL_CACHE.invalidateAll(keys);
+        cache.invalidateAll(keys);
+    }
+
+    @Override
+    protected String cacheType() {
+        return "local";
+    }
+
+    @Autowired
+    @Qualifier("redisCache")
+    @Override
+    public void setNext(EnhancedCacheChainTemplate next) {
+        super.setNext(next);
     }
 }
