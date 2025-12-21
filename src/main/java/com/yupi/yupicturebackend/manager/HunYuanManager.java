@@ -15,6 +15,9 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * 混元大模型管理类
+ */
 @Slf4j
 @Component
 public class HunYuanManager {
