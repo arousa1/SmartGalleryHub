@@ -122,3 +122,31 @@ ALTER TABLE user
     ADD COLUMN vipExpireTime datetime NULL COMMENT '会员过期时间',
     ADD COLUMN vipCode varchar(128) NULL COMMENT '会员兑换码',
     ADD COLUMN vipNumber bigint NULL COMMENT '会员编号';
+
+
+-- AI 任务表（支持混元+千问双模型）
+CREATE TABLE `ai_task` (
+                           `id` BIGINT NOT NULL COMMENT '任务ID（雪花算法）',
+                           `task_type` VARCHAR(20) NOT NULL COMMENT '任务类型：TAG-自动打标, EXPAND-AI扩图, GENERATE-文生图',
+                           `ai_provider` VARCHAR(20) NOT NULL COMMENT 'AI提供商：HUNYUAN-混元, ALIYUN-阿里千问',
+                           `biz_id` BIGINT DEFAULT NULL COMMENT '关联业务ID（如图片ID）',
+                           `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '任务状态：PENDING-待处理, PROCESSING-处理中, SUCCESS-成功, FAILED-失败, CANCELLED-已取消',
+                           `parameters` JSON DEFAULT NULL COMMENT '任务参数（JSON格式）',
+                           `result` JSON DEFAULT NULL COMMENT '执行结果（JSON格式）',
+                           `error_msg` VARCHAR(500) DEFAULT NULL COMMENT '错误信息',
+                           `progress` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '进度百分比 0-100',
+                           `retry_count` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '重试次数',
+                           `user_id` BIGINT NOT NULL COMMENT '创建用户ID',
+                           `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                           `finish_time` DATETIME DEFAULT NULL COMMENT '完成时间',
+                           `is_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除（0-未删除, 1-已删除）',
+                           PRIMARY KEY (`id`),
+                           KEY `idx_task_type` (`task_type`),
+                           KEY `idx_ai_provider` (`ai_provider`),
+                           KEY `idx_status` (`status`),
+                           KEY `idx_biz_id` (`biz_id`),
+                           KEY `idx_user_id` (`user_id`),
+                           KEY `idx_create_time` (`create_time`),
+                           KEY `idx_status_create_time` (`status`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI任务表（异步处理混元打标、千问扩图等）';
