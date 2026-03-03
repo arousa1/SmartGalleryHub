@@ -60,6 +60,31 @@ spring:
       sql-show: true
   profiles:
     active: local
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+        concurrency: 3
+        max-concurrency: 10
+        prefetch: 100
+  # Canal 配置（自定义）
+  canal:
+    server:
+      enabled: true
+    destination: picture
+
+# 缓存配置
+cache:
+  caffeine:
+    max-size: 10000
+    expire-seconds: 60  # 短TTL，依赖Canal失效
+  redis:
+    expire-seconds: 600
 mybatis-plus:
   configuration:
     # MyBatis 配置
