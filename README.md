@@ -1,6 +1,6 @@
 # SmartGalleryHub
 
-智能图片管理平台后端服务，提供完整的图片生命周期管理、空间隔离、AI 分析和高性能缓存解决方案。 [1](#0-0) 
+智能图片管理平台后端服务，提供完整的图片生命周期管理、空间隔离、AI 分析和高性能缓存解决方案。 
 
 ## ✨ 主要特性
 
@@ -25,7 +25,7 @@
 | 认证授权 | Sa-Token | 1.39.0 |
 | 对象存储 | 腾讯云 COS | 5.6.227 |
 | AI 分析 | 腾讯混元 | 3.1.1169 |
-| API 文档 | Knife4j | 4.4.0 | [2](#0-1) 
+| API 文档 | Knife4j | 4.4.0 |
 
 ## 🚀 快速开始
 
@@ -38,7 +38,7 @@
 
 ### 配置文件
 
-主要配置在 `application.yml`： [3](#0-2) 
+主要配置在 `application.yml`：
 
 ```yaml
 server:
@@ -83,7 +83,7 @@ mvn spring-boot:run
 | `SpaceController` | `/space/*` | 空间管理、权限控制 |
 | `SpaceAnalyzeController` | `/space/analyze/*` | 空间数据分析 |
 | `UserController` | `/user/*` | 用户注册、登录、VIP |
-| `FileController` | `/file/*` | 文件管理（管理员） | [4](#0-3) 
+| `FileController` | `/file/*` | 文件管理（管理员） | 
 
 ## 🏗️ 系统架构
 
@@ -133,7 +133,7 @@ graph TD
 
 ### 缓存架构
 
-采用 L1(Caffeine) + L2(Redis) 多级缓存，通过 Canal 监听数据库 binlog 实现自动缓存失效： [5](#0-4) 
+采用 L1(Caffeine) + L2(Redis) 多级缓存，通过 Canal 监听数据库 binlog 实现自动缓存失效： 
 
 ### 权限系统
 
@@ -141,7 +141,7 @@ graph TD
 - 用户会话：全局用户身份认证
 - 空间会话：空间级别的权限控制
 
-空间角色配置： [6](#0-5) 
+空间角色配置： 
 
 ## 🔧 开发指南
 
@@ -171,7 +171,7 @@ PictureVO picture = cacheManager.getPictureVoById(pictureId);
 public BaseResponse<PictureVO> uploadPicture(...) {
     // 业务逻辑
 }
-``` [7](#0-6) 
+``` 
 
 ## 🤝 贡献指南
 
