@@ -32,4 +32,14 @@ public class PictureEditResponseMessage {
      * 用户信息
      */
     private UserVO user;
+
+    /**
+     * 全局逻辑版本号，解决冲突
+     */
+    private Long editVersion;
+
+    /**
+     * 针对的图片id
+     */
+    private Long pictureId;
 }

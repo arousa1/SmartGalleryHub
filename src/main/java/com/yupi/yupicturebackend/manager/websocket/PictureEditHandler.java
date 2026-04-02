@@ -20,6 +20,10 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import org.redisson.api.RSet;
+import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Map;
@@ -40,8 +44,11 @@ public class PictureEditHandler extends TextWebSocketHandler {
     @Lazy
     private PictureEditEventProducer pictureEditEventProducer;
 
-    // 每张图片的编辑状态，key: pictureId, value: 当前正在编辑的用户 ID
-    private final Map<Long, Long> pictureEditingUsers = new ConcurrentHashMap<>();
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RedissonClient redissonClient;
 
     // 保存所有连接的会话，key: pictureId, value: 用户会话集合
     private final Map<Long, Set<WebSocketSession>> pictureSessions = new ConcurrentHashMap<>();
@@ -98,19 +105,23 @@ public class PictureEditHandler extends TextWebSocketHandler {
      * @param pictureId
      */
     public void handleEnterEditMessage(PictureEditRequestMessage pictureEditRequestMessage, WebSocketSession session, User user, Long pictureId) throws IOException {
-        // 没有用户正在编辑该图片，才能进入编辑
-        if (!pictureEditingUsers.containsKey(pictureId)) {
-            // 设置用户正在编辑该图片
-            pictureEditingUsers.put(pictureId, user.getId());
-            // 构造响应，发送加入编辑的消息通知
-            PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
-            pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.ENTER_EDIT.getValue());
-            String message = String.format("用户 %s 开始编辑图片", user.getUserName());
-            pictureEditResponseMessage.setMessage(message);
-            pictureEditResponseMessage.setUser(userService.getUserVO(user));
-            // 广播给所有用户
-            broadcastToPicture(pictureId, pictureEditResponseMessage);
-        }
+        // 放开独占锁，使用 Redisson 集合管理加入协作的用户
+        RSet<Long> editUsers = redissonClient.getSet("picture:edit:users:" + pictureId);
+        editUsers.add(user.getId());
+
+        // 申请全局递增逻辑版本号
+        Long editVersion = stringRedisTemplate.opsForValue().increment("picture:edit:version:" + pictureId);
+
+        PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
+        pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.ENTER_EDIT.getValue());
+        String message = String.format("用户 %s 开始协同编辑图片", user.getUserName());
+        pictureEditResponseMessage.setMessage(message);
+        pictureEditResponseMessage.setUser(userService.getUserVO(user));
+        pictureEditResponseMessage.setEditVersion(editVersion);
+        pictureEditResponseMessage.setPictureId(pictureId);
+        
+        // 广播给所有人（通过 Redis Pub/Sub）
+        stringRedisTemplate.convertAndSend(PictureEditRedisListener.PICTURE_EDIT_PEN_CHANNEL, JSONUtil.toJsonStr(pictureEditResponseMessage));
     }
 
     /**
@@ -122,25 +133,29 @@ public class PictureEditHandler extends TextWebSocketHandler {
      * @param pictureId
      */
     public void handleEditActionMessage(PictureEditRequestMessage pictureEditRequestMessage, WebSocketSession session, User user, Long pictureId) throws IOException {
-        // 正在编辑的用户
-        Long editingUserId = pictureEditingUsers.get(pictureId);
         String editAction = pictureEditRequestMessage.getEditAction();
         PictureEditActionEnum actionEnum = PictureEditActionEnum.getEnumByValue(editAction);
         if (actionEnum == null) {
             log.error("无效的编辑动作");
             return;
         }
-        // 确认是当前的编辑者
-        if (editingUserId != null && editingUserId.equals(user.getId())) {
-            // 构造响应，发送具体操作的通知
+
+        // 判断当前用户是否在协同编辑集合中
+        RSet<Long> editUsers = redissonClient.getSet("picture:edit:users:" + pictureId);
+        if (editUsers.contains(user.getId())) {
+            Long editVersion = stringRedisTemplate.opsForValue().increment("picture:edit:version:" + pictureId);
+
             PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
             pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EDIT_ACTION.getValue());
             String message = String.format("%s 执行 %s", user.getUserName(), actionEnum.getText());
             pictureEditResponseMessage.setMessage(message);
             pictureEditResponseMessage.setEditAction(editAction);
             pictureEditResponseMessage.setUser(userService.getUserVO(user));
-            // 广播给除了当前客户端之外的其他用户，否则会造成重复编辑
-            broadcastToPicture(pictureId, pictureEditResponseMessage, session);
+            pictureEditResponseMessage.setEditVersion(editVersion);
+            pictureEditResponseMessage.setPictureId(pictureId);
+
+            // 广播给所有人（通过 Redis Pub/Sub）
+            stringRedisTemplate.convertAndSend(PictureEditRedisListener.PICTURE_EDIT_PEN_CHANNEL, JSONUtil.toJsonStr(pictureEditResponseMessage));
         }
     }
 
@@ -154,19 +169,22 @@ public class PictureEditHandler extends TextWebSocketHandler {
      * @param pictureId
      */
     public void handleExitEditMessage(PictureEditRequestMessage pictureEditRequestMessage, WebSocketSession session, User user, Long pictureId) throws IOException {
-        // 正在编辑的用户
-        Long editingUserId = pictureEditingUsers.get(pictureId);
-        // 确认是当前的编辑者
-        if (editingUserId != null && editingUserId.equals(user.getId())) {
-            // 移除用户正在编辑该图片
-            pictureEditingUsers.remove(pictureId);
-            // 构造响应，发送退出编辑的消息通知
+        RSet<Long> editUsers = redissonClient.getSet("picture:edit:users:" + pictureId);
+        if (editUsers.contains(user.getId())) {
+            editUsers.remove(user.getId());
+
+            Long editVersion = stringRedisTemplate.opsForValue().increment("picture:edit:version:" + pictureId);
+
             PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
             pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EXIT_EDIT.getValue());
-            String message = String.format("用户 %s 退出编辑图片", user.getUserName());
+            String message = String.format("用户 %s 退出协同编辑图片", user.getUserName());
             pictureEditResponseMessage.setMessage(message);
             pictureEditResponseMessage.setUser(userService.getUserVO(user));
-            broadcastToPicture(pictureId, pictureEditResponseMessage);
+            pictureEditResponseMessage.setEditVersion(editVersion);
+            pictureEditResponseMessage.setPictureId(pictureId);
+
+            // 广播
+            stringRedisTemplate.convertAndSend(PictureEditRedisListener.PICTURE_EDIT_PEN_CHANNEL, JSONUtil.toJsonStr(pictureEditResponseMessage));
         }
     }
 
@@ -240,7 +258,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
      * @param pictureId
      * @param pictureEditResponseMessage
      */
-    private void broadcastToPicture(Long pictureId, PictureEditResponseMessage pictureEditResponseMessage) throws IOException {
+    public void broadcastToPicture(Long pictureId, PictureEditResponseMessage pictureEditResponseMessage) throws IOException {
         broadcastToPicture(pictureId, pictureEditResponseMessage, null);
     }
 }
